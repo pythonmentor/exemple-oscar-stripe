@@ -1,0 +1,13 @@
+[project]
+name = "oscar-test-project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "django-environ>=0.12.0",
+    "django-oscar>=3.2.5",
+    "django-oscar-stripe-sca>=0.8",
+    "stripe>=11.5.0",
+    "whoosh>=2.7.4",
+]
