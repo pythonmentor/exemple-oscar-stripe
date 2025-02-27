@@ -6,8 +6,14 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "django-environ>=0.12.0",
-    "django-oscar>=3.2.5",
+    "django-oscar[sorl-thumbnail]>=3.2.5",
     "django-oscar-stripe-sca>=0.8",
     "stripe>=11.5.0",
     "whoosh>=2.7.4",
+    "pycountry>=24.6.1",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.9.7",
 ]

@@ -12,9 +12,13 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 
+import environ
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env = environ.Env()
+environ.Env.read_env(BASE_DIR / ".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -37,7 +41,48 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
+    "django.contrib.flatpages",
+    "checkout.apps.StripeSCASandboxCheckoutConfig",
+    "oscar.config.Shop",
+    "oscar.apps.analytics.apps.AnalyticsConfig",
+    "oscar.apps.address.apps.AddressConfig",
+    "oscar.apps.shipping.apps.ShippingConfig",
+    "oscar.apps.catalogue.apps.CatalogueConfig",
+    "oscar.apps.catalogue.reviews.apps.CatalogueReviewsConfig",
+    "oscar.apps.communication.apps.CommunicationConfig",
+    "oscar.apps.partner.apps.PartnerConfig",
+    "oscar.apps.basket.apps.BasketConfig",
+    "oscar.apps.payment.apps.PaymentConfig",
+    "oscar.apps.offer.apps.OfferConfig",
+    "oscar.apps.order.apps.OrderConfig",
+    "oscar.apps.customer.apps.CustomerConfig",
+    "oscar.apps.search.apps.SearchConfig",
+    "oscar.apps.voucher.apps.VoucherConfig",
+    "oscar.apps.wishlists.apps.WishlistsConfig",
+    "oscar.apps.dashboard.apps.DashboardConfig",
+    "oscar.apps.dashboard.reports.apps.ReportsDashboardConfig",
+    "oscar.apps.dashboard.users.apps.UsersDashboardConfig",
+    "oscar.apps.dashboard.orders.apps.OrdersDashboardConfig",
+    "oscar.apps.dashboard.catalogue.apps.CatalogueDashboardConfig",
+    "oscar.apps.dashboard.offers.apps.OffersDashboardConfig",
+    "oscar.apps.dashboard.partners.apps.PartnersDashboardConfig",
+    "oscar.apps.dashboard.pages.apps.PagesDashboardConfig",
+    "oscar.apps.dashboard.ranges.apps.RangesDashboardConfig",
+    "oscar.apps.dashboard.reviews.apps.ReviewsDashboardConfig",
+    "oscar.apps.dashboard.vouchers.apps.VouchersDashboardConfig",
+    "oscar.apps.dashboard.communications.apps.CommunicationsDashboardConfig",
+    "oscar.apps.dashboard.shipping.apps.ShippingDashboardConfig",
+    # 3rd-party apps that oscar depends on
+    "widget_tweaks",
+    "haystack",
+    "treebeard",
+    "sorl.thumbnail",  # Default thumbnail backend, can be replaced
+    "django_tables2",
+    "oscar_stripe_sca",
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -47,6 +92,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "oscar.apps.basket.middleware.BasketMiddleware",
+    "django.contrib.flatpages.middleware.FlatpageFallbackMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -62,6 +109,10 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "oscar.apps.search.context_processors.search_form",
+                "oscar.apps.checkout.context_processors.checkout",
+                "oscar.apps.communication.notifications.context_processors.notifications",
+                "oscar.core.context_processors.metadata",
             ],
         },
     },
@@ -77,6 +128,7 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+        "ATOMIC_REQUESTS": True,
     }
 }
 
@@ -103,7 +155,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "fr"
 
 TIME_ZONE = "UTC"
 
@@ -116,8 +168,67 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "static"
+
+# Chemin où Django stocke les fichiers uploadés
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+AUTHENTICATION_BACKENDS = (
+    "oscar.apps.customer.auth_backends.EmailBackend",
+    "django.contrib.auth.backends.ModelBackend",
+)
+
+# Email
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Haystack settings
+HAYSTACK_CONNECTIONS = {
+    "default": {
+        "ENGINE": "haystack.backends.whoosh_backend.WhooshEngine",
+        "PATH": BASE_DIR / "whoosh_index",
+        "INCLUDE_SPELLING": True,
+    },
+}
+
+# Oscar settings
+from oscar.defaults import *
+
+OSCAR_INITIAL_ORDER_STATUS = "Pending"
+OSCAR_INITIAL_LINE_STATUS = "Pending"
+OSCAR_ORDER_STATUS_PIPELINE = {
+    "Pending": (
+        "Being processed",
+        "Cancelled",
+    ),
+    "Being processed": (
+        "Processed",
+        "Cancelled",
+    ),
+    "Cancelled": (),
+}
+
+OSCAR_SHOP_NAME = "Exemple"
+OSCAR_SHOP_TAGLINE = "ExempleTagline"
+OSCAR_DEFAULT_CURRENCY = "EUR"
+
+OSCAR_ALLOW_ANON_CHECKOUT = True
+STRIPE_COMPRESS_TO_ONE_LINE_ITEM = False
+STRIPE_USE_PRICES_API = True
+
+STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY")
+STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY")
+STRIPE_SIGNATURE_KEY = env("STRIPE_SIGNATURE_KEY")
+STRIPE_RETURN_URL_BASE = env("STRIPE_RETURN_URL_BASE", default="http://localhost:8000")
+
+STRIPE_PAYMENT_SUCCESS_URL = "{0}{1}".format(
+    STRIPE_RETURN_URL_BASE, "/checkout/preview-stripe/{0}/"
+)
+STRIPE_PAYMENT_CANCEL_URL = "{0}{1}".format(
+    STRIPE_RETURN_URL_BASE, "/checkout/stripe-payment-cancel/{0}/"
+)
