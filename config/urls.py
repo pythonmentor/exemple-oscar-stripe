@@ -13,7 +13,7 @@ urlpatterns = [
     # The Django admin is not officially supported; expect breakage.
     # Nonetheless, it's often useful for debugging.
     path("admin/", admin.site.urls),
-    path("", include(apps.get_app_config("oscar").urls[0])),
+    path("boutique/", include(apps.get_app_config("oscar").urls[0])),
 ]
 
 # Ajouter les fichiers media uniquement en mode développement
